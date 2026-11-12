@@ -313,6 +313,9 @@ input[type=file]::file-selector-button {
 <!-- ══ DATABASE ══ -->
 <div id="pg-database" class="page">
   <input type="text" class="fi" id="db-search" placeholder="🔍  Cerca targa, proprietario, marca..." oninput="renderDB()" style="margin-bottom:12px"/>
+  <!-- A1 (12/11/2026): copia di sicurezza dell'archivio prima del trasloco di TANOSCAN -->
+  <button type="button" onclick="esportaArchivio()" style="width:100%;margin:0 0 6px;padding:12px;border-radius:12px;border:1px solid #4aa3ff;background:#0d1b2a;color:#4aa3ff;font-weight:800;font-size:15px">📦 Salva una copia dell'archivio</button>
+  <div id="arch-msg" style="font-size:13px;color:#c3cddb;margin:0 0 12px;min-height:16px"></div>
   <div id="db-list"></div>
 
   <!-- Info spostate qui dall'ex pagina Dash (disponibili in caso di bisogno) -->
@@ -971,6 +974,31 @@ function sendSMS(plate){
 // ══════════════════════════════════════════════════════════
 // DATABASE
 // ══════════════════════════════════════════════════════════
+/* A1 (12/11/2026): copia dell'archivio locale (tano_db_v1) prima del trasloco di TANOSCAN.
+   1) scarica sul telefono il file tanoscan_archivio_AAAA-MM-GG.json  2) ne manda una copia al Supabase di Tano.
+   Non cambia nulla nell'archivio: lo legge soltanto. */
+async function esportaArchivio(){
+  var msg=document.getElementById('arch-msg');
+  function m(t,c){ if(msg){ msg.innerHTML=t; msg.style.color=c||'#c3cddb'; } }
+  var dbLoc=[]; try{ dbLoc=JSON.parse(localStorage.getItem(DB_KEY)||'[]'); }catch(e){ dbLoc=db; }
+  if(!Array.isArray(dbLoc)||!dbLoc.length) dbLoc=db;
+  var pacco={ versione:'tano_db_v1', esportato_il:new Date().toISOString(), origine:location.host, db:dbLoc, storico:(typeof scanHistory!=='undefined'&&Array.isArray(scanHistory))?scanHistory:[] };
+  var testo=JSON.stringify(pacco);
+  try{
+    var d=new Date(), z=function(n){return String(n).padStart(2,'0');};
+    var nome='tanoscan_archivio_'+d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'.json';
+    var url=URL.createObjectURL(new Blob([testo],{type:'application/json'}));
+    var a=document.createElement('a'); a.href=url; a.download=nome; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); },5000);
+  }catch(e){}
+  m('<span class="spin">\u25CC</span> Copia scaricata sul telefono. Invio della copia di sicurezza ('+dbLoc.length+' targhe)...');
+  try{
+    var r=await fetch(LISA_SUPABASE_URL+'/functions/v1/tanoscan-archivio',{method:'POST',headers:lisaHeaders(),body:testo});
+    var o=await r.json().catch(function(){return {};});
+    if(r.ok&&o.ok) m('\u2705 Copia di sicurezza salvata: '+o.conteggio+' targhe'+(o.gia_presente?' (era gi\u00e0 salvata, identica)':'')+'. Il file \u00e8 anche nei Download del telefono.','#3ad29f');
+    else m('\u26A0\uFE0F Copia NON inviata ('+(o.errore||('errore '+r.status))+'). Il file scaricato sul telefono resta valido: tienilo.','#ffab00');
+  }catch(e){ m('\u26A0\uFE0F Rete assente: copia NON inviata. Il file scaricato sul telefono resta valido: tienilo.','#ffab00'); }
+}
 function renderDB(){
   var q=(document.getElementById('db-search').value||'').toLowerCase();
   var list=document.getElementById('db-list');
