@@ -1,6 +1,6 @@
 {
-  "name": "TANO Auto Scan Italia",
-  "short_name": "TANO Auto",
+  "name": "TANOSCAN",
+  "short_name": "TANOSCAN",
   "description": "Sistema di lettura targhe italiane",
   "start_url": "/",
   "display": "standalone",
