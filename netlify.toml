@@ -1,0 +1,30 @@
+"$schema" = "https://open-api.netlify.com/netlify.schema.json"
+
+# TANOSCAN su Netlify (Gaspare) — A5, 12/11/2026
+# Nessuna build: si pubblica la pagina cosi' com'e'.
+[build]
+  publish = "."
+  command = ""
+
+# La lettura targa / libretto / foto (/api/scan) passa alla funzione tanoscan-scan del Supabase di Tano.
+# La pagina non cambia: chiama sempre /api/scan. La chiave qui sotto e' la chiave PUBBLICA (anon) di Tano,
+# gia' presente in index.html; i segreti (Anthropic, RegCheck) restano nel Supabase di Tano.
+[[redirects]]
+  from = "/api/scan"
+  to = "https://dpdplyzmctsemvqcrooc.supabase.co/functions/v1/tanoscan-scan"
+  status = 200
+  force = true
+  headers = {apikey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwZHBseXptY3RzZW12cWNyb29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMzY0MDQsImV4cCI6MjA5NTYxMjQwNH0.kSRU_kygn3FBZkFeGmZiM2YAfShDZ-qdna3VMAgG80o", Authorization = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwZHBseXptY3RzZW12cWNyb29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMzY0MDQsImV4cCI6MjA5NTYxMjQwNH0.kSRU_kygn3FBZkFeGmZiM2YAfShDZ-qdna3VMAgG80o"}
+
+# Il vecchio codice Vercel non va servito
+[[redirects]]
+  from = "/api/*"
+  to = "/index.html"
+  status = 404
+  force = true
+
+# Tutte le altre pagine -> index.html (come vercel.json)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
