@@ -414,7 +414,20 @@ function stCfg(s){return ST[s]||ST.unknown;}
 // ══════════════════════════════════════════════════════════
 // ⬇️ URL del dashboard di Lisa su Netlify — il pulsante "LISA" del menu apre questo indirizzo.
 //    Se ricrei un nuovo sito Netlify, aggiorna SOLO questa riga.
-var LISA_DASHBOARD_URL = "https://earnest-begonia-1294fc.netlify.app";
+var LISA_DASHBOARD_URL = "https://tano-dashboard.netlify.app";
+/* Autorizzazione per la ricerca per targa: la manda la dashboard (dopo il codice d'ingresso) quando TANOSCAN e' aperto dentro di lei.
+   Resta solo in memoria, mai salvata. Accettata solo dagli indirizzi della dashboard. */
+var TANO_TOKEN = null;
+var TANO_DASHBOARD_ORIGINI = ["https://tano-dashboard.netlify.app"];
+window.addEventListener("message", function(e){
+  if (TANO_DASHBOARD_ORIGINI.indexOf(e.origin) < 0) return;
+  var d = e.data || {};
+  if (d.tipo === "tano-token" && /^[0-9a-f]{64}$/.test(d.token || "")) TANO_TOKEN = d.token;
+});
+if (window.parent && window.parent !== window) {
+  TANO_DASHBOARD_ORIGINI.forEach(function(o){ try { window.parent.postMessage({ tipo: "tano-token-richiesta" }, o); } catch (_) {} });
+}
+function targaHeaders(){ var h = { "Content-Type": "application/json" }; if (TANO_TOKEN) h["x-tano-token"] = TANO_TOKEN; return h; }
 function goLisa(){ window.location.href = LISA_DASHBOARD_URL; }
 
 var LISA_SUPABASE_URL = "https://dpdplyzmctsemvqcrooc.supabase.co";
@@ -709,7 +722,7 @@ async function doScan(){
       try {
         var lookupRes = await fetch('/api/scan', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: targaHeaders(),
           body: JSON.stringify({ plate: plate })
         });
         var lookupData = await lookupRes.json();
@@ -749,7 +762,7 @@ async function doManual(){
   showResult(p, null, true); // loading
   try{
     var lookupRes = await fetch('/api/scan', {
-      method:'POST', headers:{ 'Content-Type':'application/json' },
+      method:'POST', headers: targaHeaders(),
       body: JSON.stringify({ plate: p })
     });
     var lookupData = await lookupRes.json();
